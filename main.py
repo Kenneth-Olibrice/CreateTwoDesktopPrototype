@@ -1,10 +1,9 @@
-# Steps (for my reference):
-# 1) Load the image files and their associated labels in parts.
-# 2) For each part, format it into the desired format for the model (Dataset object I think).
-# 3) Pass the data into the CNN for the feature map.
-# 4) Pass the feature map to the DNN for processing
-# 5) Test it on the test data, and evaluate on the eval data.
-# 6) If the performance is acceptable, save the model and begin work on mobile importation.
+# To-do:
+# 1) Fully train the model.
+# 2) Save the model.
+# 3) Develop a full PC prototype of the app. The most difficult task will be determining image input format.
+# 4) Port the app to Android.
+# 5) Polish.
 import keras.layers
 import pandas as pd
 import tensorflow as tf
@@ -39,24 +38,20 @@ label_list = list(meta_data["dx"])
 # 5) bcc
 # 6) akiec
 
-# Create dataset objects.
-
-
-# End of dataset creation.
-data_gen= ImageDataGenerator(validation_split=0.2)
+data_gen = ImageDataGenerator(validation_split=0.2)
 train_ds = data_gen.flow_from_directory(IMAGES_PATH, class_mode="sparse",save_format='jpg',
-                                     batch_size=batch_size, target_size=(45, 60),subset="training")
+                                        batch_size=batch_size, target_size=(45, 60),subset="training")
 
 val_ds = data_gen.flow_from_directory(IMAGES_PATH, class_mode="sparse",save_format='jpg',
-                                     batch_size=batch_size, target_size=(45, 60), subset="validation")
+                                      batch_size=batch_size, target_size=(45, 60), subset="validation")
 
 model = Sequential([
-  keras.layers.Rescaling(1./255, input_shape=(45, 60, 3 )),
-  layers.Conv2D(64, (3,3), activation='relu'),
+  keras.layers.Rescaling(1./255, input_shape=(45, 60, 3)),
+  layers.Conv2D(64, (3, 3), activation='relu'),
   layers.MaxPooling2D(),
-  layers.Conv2D(64, (3,3), activation='relu'),
+  layers.Conv2D(64, (3, 3), activation='relu'),
   layers.MaxPooling2D(),
-  layers.Conv2D(64, (3,3), activation='relu'),
+  layers.Conv2D(64, (3, 3), activation='relu'),
   layers.MaxPooling2D(),
   layers.Flatten(),
   layers.Dense(128, activation='relu'),
@@ -66,7 +61,7 @@ model = Sequential([
 model.compile(optimizer=keras.optimizers.adam_v2.Adam(),
               loss=keras.losses.sparse_categorical_crossentropy,
               metrics=['accuracy'])
-history = model.fit(
+history = model.fit(  # Train the model.
   train_ds,
   validation_data=val_ds,
   shuffle=True,
