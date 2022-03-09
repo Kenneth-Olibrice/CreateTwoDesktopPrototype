@@ -72,7 +72,7 @@ history = model.fit(  # Train the model.
 
 acc = history.history['accuracy']
 val_acc = history.history['val_accuracy']
-
+model.save_weights(r"D:\APMobileAppCreate#2\CheckpointDir\saved.h5")
 print(acc, "\n", val_acc)
 
 
