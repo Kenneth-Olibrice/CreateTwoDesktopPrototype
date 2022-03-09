@@ -11,26 +11,23 @@ import tensorflow as tf
 import pathlib
 import matplotlib.pyplot as plt
 from keras import layers, models, losses
+from keras.layers import Dropout
 import os
+
+from keras.datasets import mnist
 from keras.models import Sequential
 from keras.optimizers import adam_v2
 
 # Define our variables/constants.
-IMAGES_PATH = pathlib.Path("D:\\APMobileAppCreate#2")
+from keras_preprocessing.image import ImageDataGenerator
+
+IMAGES_PATH = pathlib.Path("D:\\APMobileAppCreate#2\\Images")
 IMAGE_WIDTH = 600
 IMAGE_HEIGHT = 450
 batch_size = 32
 SAVE_PATH = "D:\\APMobileAppCreate#2\\CheckpointDir\\cp.ckpt"
-SAVE_DIR = os.path.dirname(SAVE_PATH)
-class_names = ["benign keratosis-like lesions (solar lentigines / seborrheic keratoses and lichen-planus like keratoses",
-               "melanocytic nevi", "dermatofibroma", "melanoma",
-               "vascular lesions (angiomas, angiokeratomas, pyogenic granulomas and hemorrhage",
-               "basal cell carcinoma", "carcinoma / Bowen's disease"]
-
 # We need to create an object to hold our labels.
 meta_data = pd.read_csv("D:\\APMobileAppCreate#2\\HAM10000_metadata.csv")
-
-
 label_list = list(meta_data["dx"])
 
 # I reformatted the CSV file to change the 'dx' column to numerical instead of categorical. Here is the translation:
@@ -43,45 +40,45 @@ label_list = list(meta_data["dx"])
 # 6) akiec
 
 # Create dataset objects.
-train_ds = tf.keras.preprocessing.image_dataset_from_directory(directory=IMAGES_PATH, image_size=(IMAGE_HEIGHT, IMAGE_WIDTH),
-                                                        labels=label_list, batch_size=batch_size, seed=123,
-                                                        validation_split=0.2, subset="training")
 
-val_ds = tf.keras.preprocessing.image_dataset_from_directory(directory=IMAGES_PATH, image_size=(IMAGE_HEIGHT, IMAGE_WIDTH),
-                                                        labels=label_list, batch_size=batch_size, seed=123,
-                                                        validation_split=0.2, subset="validation")
 
 # End of dataset creation.
+data_gen= ImageDataGenerator(validation_split=0.2)
+train_ds = data_gen.flow_from_directory(IMAGES_PATH, class_mode="sparse",save_format='jpg',
+                                     batch_size=batch_size, target_size=(45, 60),subset="training")
 
+val_ds = data_gen.flow_from_directory(IMAGES_PATH, class_mode="sparse",save_format='jpg',
+                                     batch_size=batch_size, target_size=(45, 60), subset="validation")
 
 model = Sequential([
-  keras.layers.Rescaling(1./255, input_shape=(IMAGE_HEIGHT, IMAGE_WIDTH, 3)),
-  layers.Conv2D(32, 3, padding='same', activation='sigmoid'),
+  keras.layers.Rescaling(1./255, input_shape=(45, 60, 3 )),
+  layers.Conv2D(64, (3,3), activation='relu'),
   layers.MaxPooling2D(),
-  layers.Conv2D(64, 3, padding='same', activation='sigmoid'),
+  layers.Conv2D(64, (3,3), activation='relu'),
   layers.MaxPooling2D(),
-  layers.Conv2D(128, 3, padding='same', activation='sigmoid'),
+  layers.Conv2D(64, (3,3), activation='relu'),
   layers.MaxPooling2D(),
   layers.Flatten(),
-  layers.Dense(128, activation='sigmoid'),
-  layers.Dense(7)
+  layers.Dense(128, activation='relu'),
+  layers.Dense(7, activation="softmax")
 ])
 
-
-model.compile(optimizer=keras.optimizers.sgd_experimental.SGD(),
+model.compile(optimizer=keras.optimizers.adam_v2.Adam(),
               loss=keras.losses.sparse_categorical_crossentropy,
               metrics=['accuracy'])
-
 history = model.fit(
   train_ds,
-  shuffle=True,
   validation_data=val_ds,
-  epochs=10,
+  shuffle=True,
+  epochs=35,
   batch_size=batch_size,
+
 )
 
 acc = history.history['accuracy']
 val_acc = history.history['val_accuracy']
 
 print(acc, "\n", val_acc)
+
+
 
